@@ -6,7 +6,7 @@ from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
-
+import hashlib
 def encrypt():
     print("Choose Encryption Algorithm")
     print("(1) Base64")
@@ -360,15 +360,29 @@ def decrypt():
 
     return decipher
 
-
-def hash(s):
+def hashh():
     print("Choose hashing algorithm")
     print("MD5 (1)")
     print("SHA-1 (2)")
     print("SHA-256 (3)")
     print("SHA 512 (4)")
 
-
+    opt = int(input())
+    s = input("Enter string: ").encode()
+    if opt == 1:
+        result = hashlib.md5(s).hexdigest()
+        print("MD5 Hash:", result)
+    elif opt == 2:
+        result = hashlib.sha1(s).hexdigest()
+        print("SHA-1 Hash:", result)
+    elif opt == 3:
+        result = hashlib.sha256(s).hexdigest()
+        print("SHA-256 Hash:", result)
+    elif opt == 4:
+        result = hashlib.sha512(s).hexdigest()
+        print("SHA-512 Hash:", result)
+    else:
+        print("Invalid option.")
 
 print("Choose\n(1) Encryption\n(2) Decryption\n(3) Hashing")
 
@@ -380,7 +394,7 @@ if(opt == 1):
 elif(opt == 2):
     ans = decrypt()
     print(ans)
-# elif(s == 3):
-#     hash(s)
+elif(opt == 3):
+    hashh()
 else:
     print("Not a valid option")
