@@ -7,6 +7,7 @@ from Crypto.Cipher import PKCS1_OAEP
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 import hashlib
+import os
 def encrypt():
     print("Choose Encryption Algorithm")
     print("(1) Base64")
@@ -108,39 +109,94 @@ def encrypt():
         encryptedText = cipher.encrypt(padded_s)
         cipher = encryptedText
     
+    
     elif opt == 6:
-        s = input("Enter the string: ")
-        key = get_random_bytes(16)
-        print("Generated key (hex):", key.hex()) 
+        s = input("Enter the string to encrypt: ")
 
-        aes_cipher = AES.new(key, AES.MODE_ECB)
-        padded_s = pad(s.encode('utf-8'), AES.block_size)
+        # Ask whether to generate a new key or use an existing one
+        choice = input("Do you want to generate a new key or use an existing one? (new/existing): ").strip().lower()
+
+        if choice == "new":
+            key = get_random_bytes(16)  # AES key size is 16 bytes (128 bits)
+            print("Generated key (hex):", key.hex())
+
+            # Save the key for future decryption
+            with open("aes_key.key", "wb") as f:
+                f.write(key)
+            print("Key saved to 'aes_key.key'.")
+        elif choice == "existing":
+            if not os.path.exists("aes_key.key"):
+                print("Error: Key file 'aes_key.key' not found. Generate a new key first.")
+                return "KEY FILE NOT FOUND"
+
+            # Load the existing key
+            with open("aes_key.key", "rb") as f:
+                key = f.read()
+            print("Existing key loaded.")
+        else:
+            print("Invalid choice. Please enter 'new' or 'existing'.")
+            return "INVALID CHOICE"
+
+        # Encrypt the string
+        aes_cipher = AES.new(key, AES.MODE_ECB)  # AES in ECB mode
+        padded_s = pad(s.encode('utf-8'), AES.block_size)  # Padding the string to match block size
         cipher = aes_cipher.encrypt(padded_s)
 
+        # Save the ciphertext to a file
+        with open("ciphertext_aes.txt", "wb") as f:
+            f.write(cipher)
+
+        print("Encryption complete. Ciphertext saved to 'ciphertext_aes.txt'.")
+        return "ENCRYPTION SUCCESSFUL"
+        
     elif opt == 7:
         # RSA encryption
         s = input("Enter the string: ")
 
-        # Generate RSA key pair
-        key = RSA.generate(2048)
-        private_key = key.export_key()
-        public_key = key.publickey().export_key()
+        # Ask whether to generate a new key pair or use an existing one
+        choice = input("Do you want to generate a new key pair or use an existing one? (new/existing): ").strip().lower()
 
-        # Save private and public keys
-        with open("private_rsa.pem", "wb") as f:
-            f.write(private_key)
-        with open("public_rsa.pem", "wb") as f:
-            f.write(public_key)
+        if choice == "new":
+            # Generate RSA key pair
+            key = RSA.generate(2048)
+            private_key = key.export_key()
+            public_key = key.publickey().export_key()
+
+            # Save private and public keys
+            with open("private_rsa.pem", "wb") as f:
+                f.write(private_key)
+            with open("public_rsa.pem", "wb") as f:
+                f.write(public_key)
+
+            print("New RSA key pair generated and saved.")
+        elif choice == "existing":
+            # Check if key files exist
+            if not os.path.exists("public_rsa.pem"):
+                print("Error: Public key file (public_rsa.pem) not found. Generate a new key pair first.")
+                return "FILE NOT FOUND"
+
+            # Load the public key from the existing file
+            with open("public_rsa.pem", "rb") as f:
+                public_key = f.read()
+
+            key = RSA.import_key(public_key)
+            print("Existing public key loaded.")
+        else:
+            print("Invalid choice. Please enter 'new' or 'existing'.")
+            return "INVALID CHOICE"
 
         # Encrypt with public key
-        rsa_cipher = PKCS1_OAEP.new(key.publickey())
+        rsa_cipher = PKCS1_OAEP.new(RSA.import_key(public_key))
         encryptedText = rsa_cipher.encrypt(s.encode('utf-8'))
 
         # Save ciphertext
         with open("ciphertext_rsa.txt", "wb") as f:
             f.write(encryptedText)
-        
+
+        print("Encryption complete. Ciphertext saved to 'ciphertext_rsa.txt'.")
         return "FILE CREATED"
+    
+    return cipher
 
 def decrypt():
     print("Choose Decryption Algorithm")
@@ -280,7 +336,7 @@ def decrypt():
 
         try:
           
-            cipher = eval(s)
+            
             if not isinstance(cipher, bytes):
                 raise ValueError("Ciphertext must be in bytes format.")
         except (SyntaxError, ValueError):
@@ -295,42 +351,37 @@ def decrypt():
             print("Error during decryption:", e)
             return None
     elif opt == 6:
-    # Ask the user for the secret key
-        print("Enter the secret key (hex-encoded, 32 characters):")
-        key_hex = input().strip()
+        if not os.path.exists("aes_key.key"):
+            print("Error: Key file 'aes_key.key' not found. Cannot decrypt without a key.")
+            return "KEY FILE NOT FOUND"
 
-        # Convert the hex key to bytes
+        # Load the key from the file
+        with open("aes_key.key", "rb") as f:
+            key = f.read()
+
+        # Check if the ciphertext file exists
+        if not os.path.exists("ciphertext_aes.txt"):
+            print("Error: Ciphertext file 'ciphertext_aes.txt' not found. Encrypt something first.")
+            return "CIPHERTEXT FILE NOT FOUND"
+
+        # Load the ciphertext from the file
+        with open("ciphertext_aes.txt", "rb") as f:
+            ciphertext = f.read()
+
         try:
-            key = bytes.fromhex(key_hex)
-        except ValueError:
-            print("Invalid key format. Please provide a valid 32-character hex key.")
-            return None
-
-        # Ensure the key length is 16 bytes
-        if len(key) != 16:
-            print("Invalid key length. AES requires a 16-byte key.")
-            return None
-
-
-        try:
-            # Convert the string input back to bytes
-            cipher = eval(cipher)
-            if not isinstance(cipher, bytes):
-                raise ValueError("Ciphertext must be in bytes format.")
-        except (SyntaxError, ValueError):
-            print("Invalid ciphertext format. Please provide a valid bytes object (e.g., b'...').")
-            return None
-
-        # Decrypt the ciphertext
-        try:
+            # Initialize AES cipher in ECB mode
             aes_cipher = AES.new(key, AES.MODE_ECB)
-            decrypted_padded = aes_cipher.decrypt(cipher)
 
-            # Unpad and decode the plaintext
-            decipher = unpad(decrypted_padded, AES.block_size).decode('utf-8')
+            # Decrypt and remove padding
+            padded_plaintext = aes_cipher.decrypt(ciphertext)
+            plaintext = unpad(padded_plaintext, AES.block_size).decode('utf-8')
+
+            print("Decryption successful. The plaintext is:")
+            print(plaintext)
+            return plaintext
         except (ValueError, KeyError) as e:
             print("Error during decryption:", e)
-            return None
+        return "DECRYPTION FAILED"
     elif opt == 7:
         print("Select the RSA-encrypted ciphertext file:")
         Tk().withdraw()
