@@ -18,9 +18,19 @@ def encrypt():
     opt = int(input("Enter option (1-7): "))
     
     if opt == 1:
-        s = input("Enter the string to encode: ")
-        encoded = base64.b64encode(s.encode('utf-8')).decode('utf-8')
-        return encoded
+        baseChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+        binary = ''.join(format(ord(char), '08b') for char in s)
+        cipher = ''
+
+        while len(binary) % 6 != 0:
+            binary += '0'
+        
+        for i in range(0, len(binary),6):
+            chunk = binary[i:i+6]
+            cipher += baseChars[int(chunk, 2)]
+        while len(cipher) % 4 != 0:
+            cipher += '='
+        return cipher
 
     elif opt == 2:
         s = input("Enter the string: ")
