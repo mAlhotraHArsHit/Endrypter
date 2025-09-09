@@ -14,7 +14,6 @@ def encrypt():
     print("(4) Vigenere Cipher")
     print("(5) DES")
     print("(6) AES")
-    print("(7) RSA")
     opt = int(input("Enter option (1-7): "))
     
     if opt == 1:
@@ -152,7 +151,7 @@ def decrypt():
     print("(4) Vigenere Cipher")
     print("(5) DES")
     print("(6) AES")
-    print("(7) RSA")
+    
     opt = int(input("Enter option (1-7): "))
     decipher = ""
 
