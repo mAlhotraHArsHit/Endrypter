@@ -1,0 +1,8 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"             # Location of requirements.txt
+    schedule:
+      interval: "daily"         # Check for updates daily
+    allow:
+      - dependency-name: "pycryptodome"   # Only track this package
